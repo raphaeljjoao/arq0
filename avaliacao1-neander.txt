@@ -1,0 +1,92 @@
+Trechos do programa:
+ - 0 a 6: se a == 0 ou b == 0, então resultado = 0
+ - 8 a 11: faz a operação -b + a
+ - 13: se (-b + a) < 0, o que equivale a (a < b), então maior = b e menor = a, caso contrário o programa segue e maior = a e menor = b
+ - 15 a 23: maior = a e menor = b
+ - 25 a 31: maior = b e menor = a
+ - 33 a 35: resultado = maior
+ - 37 a 64: algoritmo de divisão (confere se o resultado é divisível pelo menor número)
+	- 37 a 39: copia o resultado para uma posição de memória auxiliar
+	- 41 a 46: copia o número menor em complemento de 2 para uma posição de memória auxiliar
+	- 48 a 52: faz a operação auxMMC + auxMenor, onde auxMenor equivale a (-menor) e desvia para as condicionais
+	- 54 a 58: faz a operação MMC = MMC + maior
+	- 60 a 62: condicionais
+		- 60: o resultado do MMC já está correto, desvia para os passos finais do programa
+		- 62: o resultado MMC ainda não está correto, desvia para a operação MMC = MMC + maior
+	- 64: se nenhuma das condicionais for ativada, continua com as subtrações sucessivas
+ - 66 a 68: resultado = 0
+ - 70 a 80: zera as posições de memória menor, maior, auxMMC, auxMenor e encerra o programa
+
+  0   32 128   LDA 128			; AC = a
+  2  160  68   JZ  68			; se AC = 0, então PC = 68
+  4   32 129   LDA 129			; AC = b
+  6  160  68   JZ  68			; se AC = 0, então PC = 68
+  
+  8   96       NOT				; inverte todos os bits do AC (complemento de 1)
+  9   48 131   ADD 131			; AC = AC + 1 (complemento de 2)
+ 11   48 128   ADD 128			; AC = AC + a
+ 13  144  25   JN  25			; se AC < 0, então PC = 25
+ 
+ 15   32 128   LDA 128			; AC = a
+ 17   16 133   STA 133			; maior = AC
+ 19   32 129   LDA 129			; AC = b
+ 21   16 132   STA 132			; menor = AC
+ 23  128  33   JMP 33			; PC = 33 (evita que menor e maior sejam sobrescritos)
+ 
+ 25   32 129   LDA 129			; AC = b
+ 27   16 133   STA 133			; maior = AC
+ 29   32 128   LDA 128			; AC = a
+ 31   16 132   STA 132			; menor = AC
+ 
+ 33   32 133   LDA 133			; AC = maior
+ 35   16 130   STA 130			; resultado = AC
+ 
+ 37   32 130   LDA 130			; AC = resultado
+ 39   16 134   STA 134			; auxMMC = AC
+ 
+ 41   32 132   LDA 132			; AC = menor
+ 43   96       NOT				; inverte todos os bits do AC (complemento de 1)
+ 44   48 131   ADD 131			; AC = AC + 1 (complemento de 2)
+ 46   16 135   STA 135			; auxMenor = AC
+ 
+ 48   32 134   LDA 134			; AC = auxMMC
+ 50   48 135   ADD 135			; AC = AC + auxMenor
+ 52  128  60   JMP 60			; PC = 60
+ 
+ 54   32 130   LDA 130			; AC = resultado
+ 56   48 133   ADD 133			; AC = AC + maior
+ 58   16 130   STA 130			; resultado = AC
+ 
+ 60  160  72   JZ  72			; se AC = 0, então PC = 72
+ 62  144  54   JN  54			; se AC < 0, então PC = 54
+ 
+ 64  128  50   JMP 50			; PC = 50
+ 
+ 66   32 136   LDA 136			; AC = 0
+ 68   16 130   STA 130			; resultado = AC
+ 
+ 70   32 136   LDA 136			; AC = 0
+ 72   16 132   STA 132			; menor = AC
+ 74   16 133   STA 133			; maior = AC
+ 76   16 134   STA 134			; auxMMC = AC
+ 78   16 135   STA 135			; auxMenor = AC
+ 80  240       HLT				; fim do programa
+
+;				; Explicação 				; Referência utilizada nos comentários do programa
+128    0		; Entrada primeiro número. 	; a
+129    0      	; Entrada segundo número.	; b
+130    0      	; Saída do MMC.				; resultado
+131    1      	; Número 1 para uso em 		; 1 (valor literal)
+				; operações em complemento	;
+				; de 2.						;
+132    0      	; Menor número entre a e b.	; menor
+133    0      	; Maior número entre a e b.	; maior
+134    0      	; Cópia do MMC para uso no 	;
+				; algoritmo de divisão.		; auxMMC
+135    0      	; Cópia do menor número 	; auxMenor
+				; em complemento de 2 		;
+				; para uso no algoritmo 	;
+				; de divisão.				;
+136    0      	; Número 0 para zerar 		; 0 (valor literal)
+				; os endereços de memória 	;
+				; antes do fim do programa.	;

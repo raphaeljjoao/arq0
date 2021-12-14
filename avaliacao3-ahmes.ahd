@@ -1,0 +1,134 @@
+ORG 0
+
+; == Zerando parte alta e baixa do resultado para obter o resultado correto
+
+	LDA zero	; AC = 0
+	STA mmc_msb	; parte alta do MMC = AC (0)
+	STA mmc_lsb	; parte baixa do MMC = AC (0)
+
+; == Verificação: a ou b são iguais a 0?
+	LDA b
+	JZ fim 		; se b = 0, resultado já está correto
+
+	LDA a	; 
+	JZ fim		; se a = 0, resultado já está correto
+
+
+
+; == Definição: maior e menor
+
+	SUB b		; faz a operação a - b (a já estava no AC)
+	JN bmaior	; se a - b < 0, o que equivale a (b > a)
+
+	LDA b		; define o a como maior e o b como menor
+	STA menor
+	LDA a
+	STA maior
+	JMP mmc_maior	; pula a definição de b como maior
+
+
+bmaior: LDA a		; define o b como maior e o a como menor
+	STA menor
+	LDA b
+	STA maior
+
+; == Definição: MMC = maior
+
+mmc_maior:
+	STA mmc_lsb	; copia o maior valor e salva na parte baixa do MMC (maior já estava no AC)
+
+; == Algoritmo de divisão (divisao1.ahd / Aula 11)
+; == Adaptações: o estado (estouro, divisão por zero) não é verificado e o quociente é descartado
+
+ini_div:
+	LDA mmc_msb
+	STA d_msb	; copia a parte alta do MMC para a parte alta do dividendo
+
+	LDA mmc_lsb
+	STA d_lsb	; copia a parte baixa do MMC para a parte baixa do dividendo
+
+	LDA menor
+	STA div		; copia o número menor para o divisor
+
+	LDA oito
+	STA cont	; contador = 8
+repet_div:
+
+	LDA d_lsb
+	SHL
+	STA d_lsb	; desloca a parte baixa do dividendo para a esquerda
+
+	LDA d_msb
+	ROL		; desloca a parte alta do dividendo para a esquerda
+	STA d_msb	; msbit da parte alta do dividendo no carry
+	JC d_msb_maior	; se C = 1, o que equivale a (d_msb > divisor)
+
+	LDA d_msb
+	SUB div		; calcula (d_msb - divisor)
+	JB d_msb_menor	; se B = 1, o que equivale a (d_msb < divisor)
+
+d_msb_maior:
+	LDA d_msb	; se (d_msb >= divisor)
+     	SUB div       	; pode subtrair
+     	STA d_msb	
+
+d_msb_menor:
+	LDA cont
+     	SUB um    	; decrementa o contador
+     	STA cont
+     	JNZ repet_div 	; se (cont > 0), repete o laço
+
+fim_div:
+	LDA d_msb
+     	STA resto   	; resto = parte alta do dividendo
+
+; == Verificação: MMC é divisível por menor
+
+	JZ fim		; se MMC for divisível por menor (resto = 0), o resultado já está correto
+
+; == Operação: MMC = MMC + maior
+
+	LDA mmc_lsb	; caso contrário, faz a operação MMC = MMC + maior
+	ADD maior
+	STA mmc_lsb
+	JC add_mmc_msb	; se houver estouro de representação na parte baixa, pula para a parte do programa que trata da parte alta
+	JMP ini_div	; se não houve estouro de representação, realiza a divisão novamente
+
+; == Condição: a operação MMC = MMC + maior gerou um estouro de representação na parte baixa
+
+add_mmc_msb:		; houve estouro de representação na parte baixa, salva o carry na parte alta
+	LDA mmc_msb
+	ADD um
+	STA mmc_msb
+	JMP ini_div	; realiza a divisão novamente
+	
+	JMP fim
+
+; == Fim: resultado correto armazenado nos endereços de memória correspondentes (130 e 131)
+
+fim:	HLT
+
+ORG 128
+
+; == Endereços essenciais do programa
+a:		DB 0
+b:		DB 0
+mmc_msb:	DB 0	; parte alta do MMC	
+mmc_lsb:	DB 0	; parte baixa do MMC
+
+; == Endereços auxiliares do programa
+menor:		DB 0
+maior:		DB 0
+
+; == Endereços do algoritmo de divisão adaptado
+d_msb:		DB 0	; parte alta do dividendo
+d_lsb:		DB 0	; parte baixa do dividendo
+div:		DB 0	; divisor
+resto:		DB 0	; resto
+cont:		DB 0	; contador
+
+
+; == Constantes
+oito:		DB 8
+um:		DB 1
+zero:		DB 0
